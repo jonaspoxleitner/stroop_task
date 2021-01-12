@@ -19,3 +19,7 @@ doc/api/
 *.js_
 *.js.deps
 *.js.map
+
+# Personal directories and files
+web/jspsych-6.0.5
+data/*

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stroop Task</title>
+    <script src="jspsych-6.0.5/jspsych.js"></script>
+    <script src="jspsych-6.0.5/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.0.5/plugins/jspsych-survey-text.js"></script>
+    <link href="jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css">
+</head>
+
+<body></body>
+
+<script>
+    function saveData(name, data) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/success');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify({
+            filename: name,
+            filedata: data
+        }));
+    }
+
+    var neutral = [
+        'bird',
+        'cat',
+        'dog',
+        'mouse',
+    ];
+
+    var interference = [
+        'one',
+        'two',
+        'three',
+        'four',
+    ];
+
+    var d = new Date();
+
+    var t_date = d.toLocaleDateString();
+    var t_time = d.toLocaleTimeString();
+
+    var part_id = '';
+    var exp_id = '';
+
+    var ids = {
+        type: 'survey-text',
+        questions: [{
+            prompt: "Participant ID"
+        }],
+        preamble: 'To ensure, that every participant only submits one attempt, you have to insert your \'Participant ID\' into the form (the \'Participant ID\' was given to you after signing up for the experiment).<br><br>Please reload the page, if you accidentally submit the wrong \'Participant ID\'.',
+        on_finish: function (data) {
+            part_id = JSON.parse(data.responses)['Q0'];
+        }
+    };
+
+    // Missing: Checking for answers
+
+    var welcome = {
+        type: 'html-keyboard-response',
+        stimulus: 'Welcome to the experiment!<br>In this experiment, we will conduct a coginitive interference task.<br><br>The experiment is based on a paper (https://bit.ly/3nBfdGr) by George Bush, Paul J Whalen, Lisa M Shin and Scott L Rauch.<br><br>(Please press any key to continue.)',
+        response_ends_trial: true,
+    };
+
+    var privacy = {
+        type: 'html-keyboard-response',
+        stimulus: 'Privacy information:<br>We (Jonas Poxleitner,...) do only collect anonymized data, which will not be shared with third parties. Your data will be deleted after the whole experiment is finished.<br>We do only publish the source code to GitHub and not the collected data.<br><br>(Please press any key to continue.)',
+        response_ends_trial: true,
+    };
+
+    var instruction = {
+        type: 'html-keyboard-response',
+        stimulus: 'Instructions:<br>In the experiment, you will see sets of one to four identical words appearing on the screen. Sometimes the words will be common animal names (bird, cat, dog and mouse) and sometimes they will be number word (one, two, three and four). In the test, you have to report (the buttons on the keyboard - not the number pad - from 1 to 4 represent the number of words) the number of words in each set, regardless of what the words are. Please use both the index and middle fingers of each hand to respond.<br>The sets of words will change every 1,500 ms. Answer as quickly as possible, but since getting the correct answer is important, do not sacrifice accuracy for speed. Please do not blur your vision in a attempt to make the task easier - keep the words in sharp focus.<br><br>We will now start with eight trials of this experiment. The trials consist of four sets with animal names, followed by four sets with number words.<br><br>(Please press any key to continue.)',
+        response_ends_trial: true,
+    };
+
+    var transition = {
+        type: 'html-keyboard-response',
+        stimulus: 'You have completed the trials. We will now continue with the real experiment.<br><br>(Please press any key to continue.)',
+        response_ends_trial: true,
+    };
+
+    var end = {
+        type: 'html-keyboard-response',
+        stimulus: 'You have completed the experiment. Please continue to submit your data to us.<br><br>(Please press any key to continue.)',
+        response_ends_trial: true,
+        on_finish: function () {
+            jsPsych.data.addProperties({
+                id: part_id,
+                date: t_date,
+                time: t_time
+            });
+
+            var data = jsPsych.data.get().filterCustom(
+                function (x) {
+                    return (x['v_neutral'] != null)
+                }).csv();
+
+            saveData('data-' + part_id.toLowerCase() + '.csv', data);
+        }
+    };
+
+    var bye = {
+        type: 'html-keyboard-response',
+        stimulus: 'Thank you!<br><br>You have successfully transmitted your data to us. Feel free to close the window or reload the page to try again.<br>Since you have already submitted your data, it will not be possible for you to override your previous data.',
+        response_ends_trial: true,
+    };
+
+    var feedback = {
+        type: 'html-keyboard-response',
+        trial_duration: 4000,
+        response_ends_trial: false,
+        stimulus: '<p><b>You pressed the wrong button.</b></p>',
+    };
+
+    var fixation = {
+        type: 'html-keyboard-response',
+        trial_duration: 500,
+        response_ends_trial: false,
+        stimulus: 'xxxxx',
+    };
+
+    maintl = [welcome].concat([privacy, ids, instruction], generateTrialPart(true, 4), generateTrialPart(false, 4), [
+        transition
+    ], generateMainTimelinePart(20), [end, bye]);
+
+    jsPsych.init({
+        timeline: maintl,
+        on_finish: function () {
+            jsPsych.data.addProperties({
+                id: part_id,
+                date: t_date,
+                time: t_time
+            });
+
+            var data = jsPsych.data.get().filterCustom(
+                function (x) {
+                    return (x['v_neutral'] != null)
+                }).csv();
+
+            saveData('data-' + part_id.toLowerCase() + '.csv', data);
+        }
+    });
+
+    function generateTrialPart(animals, length) {
+        var part = [];
+
+        for (var i = 0; i < length; i++) {
+            var count = Math.floor((Math.random() * 4) + 1);
+            var item = Math.floor((Math.random() * 3) + 0);
+
+            var text = '';
+
+            for (var j = 0; j < count; j++) {
+                text = text + (animals ? neutral[item] : interference[item]);
+
+                if (j != count - 1) {
+                    text = text + '<br>';
+                }
+            }
+
+            var stim = {
+                type: 'html-keyboard-response',
+                stimulus: text,
+                choices: ['1', '2', '3', '4'],
+                trial_duration: 1500,
+                response_ends_trial: false,
+                data: {
+                    v_neutral: animals,
+                    v_item: item,
+                    v_count: count,
+                    v_correct: -999
+                },
+                on_finish: function (data) {
+                    pressed = data['key_press'];
+                    count = data['v_count'];
+                    if (pressed != null) {
+                        if ((pressed == 49 && count == 1) ||
+                            (pressed == 50 && count == 2) ||
+                            (pressed == 51 && count == 3) ||
+                            (pressed == 52 && count == 4)) {
+                            data['v_correct'] = 1;
+                            jsPsych.endCurrentTimeline();
+                        } else {
+                            data['v_correct'] = 0;
+                        }
+                    } else {
+                        data['v_correct'] = -999;
+                        data['key_press'] = -999;
+                    }
+                }
+            };
+
+            part.push({
+                timeline: [fixation, stim, feedback]
+            });
+        }
+
+        part = jsPsych.randomization.shuffle(part);
+
+        return part;
+    }
+
+    function generateMainTimelinePart(length) {
+        var part = [];
+
+        for (var i = 0; i < length; i++) {
+            var animal = Math.random() < 0.5;
+            var count = Math.floor((Math.random() * 4) + 1);
+            var item = Math.floor((Math.random() * 3) + 0);
+
+            var text = '';
+
+            for (var j = 0; j < count; j++) {
+                text = text + (animal ? neutral[item] : interference[item]);
+
+                if (j != count - 1) {
+                    text = text + '<br>';
+                }
+            }
+
+            var stim = {
+                type: 'html-keyboard-response',
+                stimulus: text,
+                choices: ['1', '2', '3', '4'],
+                trial_duration: 1500,
+                response_ends_trial: false,
+                data: {
+                    v_neutral: animal,
+                    v_item: item,
+                    v_count: count,
+                    v_correct: -999
+                },
+                on_finish: function (data) {
+                    pressed = data['key_press'];
+                    count = data['v_count'];
+                    if (pressed != null) {
+                        if ((pressed == 49 && count == 1) ||
+                            (pressed == 50 && count == 2) ||
+                            (pressed == 51 && count == 3) ||
+                            (pressed == 52 && count == 4)) {
+                            data['v_correct'] = 1;
+                            jsPsych.endCurrentTimeline();
+                        } else {
+                            data['v_correct'] = 0;
+                        }
+                    } else {
+                        data['v_correct'] = -999;
+                        data['key_press'] = -999;
+                    }
+                }
+            };
+
+            part.push({
+                timeline: [fixation, stim, feedback]
+            });
+        }
+
+        part = jsPsych.randomization.shuffle(part);
+
+        return part;
+    }
+</script>
+
+</html>
