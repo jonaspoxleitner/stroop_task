@@ -11,5 +11,6 @@ This project was realized with a HTTP server in Dart to serve files and save use
 ## Usage
 - Install Dart
 - Run stroop_task.dart
+- Make sure you have the jsPsych library in the web/ directory.
 - The HTTP server now listens to requests and also saves the submitted user data in the data/ directory.
 - If you want to use this experiment yourself, please update the privacy information in web/index.html.
