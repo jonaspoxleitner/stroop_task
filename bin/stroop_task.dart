@@ -62,7 +62,7 @@ void saveFile(String fileName, String content) {
   var file = File('data/' + fileName);
   if (!file.existsSync()) {
     File('data/' + fileName)
-      ..createSync(recursive: true)
+      ..createSync()
       ..writeAsStringSync(content);
     console.writeLine('File: A new File was saved.');
   } else {
