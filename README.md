@@ -14,3 +14,6 @@ This project was realized with a HTTP server in Dart to serve files and save use
 - Make sure you have the jsPsych library in the web/ directory.
 - The HTTP server now listens to requests and also saves the submitted user data in the data/ directory.
 - If you want to use this experiment yourself, please update the privacy information in web/index.html.
+
+## Contributors
+I conducted this experiment with help from [Pritesh Gunjan](https://github.com/pritesh001).
